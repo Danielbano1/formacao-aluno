@@ -1,161 +1,137 @@
-# Gerenciamento de Formaturas
+# Como utilizar
 
-Este módulo em Python gerencia as formaturas de alunos em formações específicas, permitindo adicionar, notificar conclusão de cursos, e consultar formaturas. Os dados são persistidos em um arquivo JSON.
+No diretório imediatamente acima do seu módulo, execute:
 
-## Funcionalidades
+`git clone https://github.com/Danielbano1/formacao-aluno`
 
-O módulo expõe as seguintes funções:
+Depois você pode utilizar as funções de formacao-aluno com o import:
 
-- `inicializar()`
-- `finalizar()`
-- `add_formatura(id_aluno, id_formacao)`
-- `notify_curso_concluido(id_aluno, id_curso)`
-- `get_formaturas_by_aluno(id_aluno)`
-- `get_formaturas()`
-- `get_alunos_by_formatura(id_formacao)`
-- `is_concluida(id_aluno, id_formacao)`
+```Python
+from .. import formacao-aluno
 
-## Variáveis Globais
+formacao-aluno.get_formatura(25)
+```
 
-- `lista_formatura`: Lista de formaturas ativas.
-- `formaturas_deletadas`: Lista de formaturas deletadas.
-- `PATH`: Caminho do arquivo JSON onde os dados são armazenados.
+**OBS:** Para utilizar imports relativos, seu módulo também precisa fazer parte de um package, ou seja, o diretório do módulo deve possuir um arquivo `__init__.py` assim como o nosso.
 
-## Códigos de Erro
+Alternativamente, se o diretório acima do seu módulo também for um repositório, como o principal, você pode adicionar formacao-aluno como submódulo:
 
-- `OPERACAO_REALIZADA_COM_SUCESSO = 0`
-- `ALUNO_NAO_ENCONTRADO = 16`
-- `ARQUIVO_NAO_ENCONTRADO = 30`
-- `ARQUIVO_EM_FORMATO_INVALIDO = 31`
-- `ERRO_NA_ESCRITA_DO_ARQUIVO = 32`
-- `FORMATURA_NAO_ENCONTRADA = 40`
-- `FORMATURA_JA_EXISTE = 41`
-- `FORMATURA_NAO_ATIVA = 42`
-- `CURSO_NAO_CONCLUIDO = 51`
+`git submodule add https://github.com/Danielbano1/formacao-aluno`
 
-## Funções
+## Dependências
 
-### `inicializar() -> int`
+Python 3.9+
 
-Carrega os dados do arquivo JSON para a variável global `lista_formaturas`.
+# Documentação adicional
 
-**Retorna:**
-- `OPERACAO_REALIZADA_COM_SUCESSO` (0) se a operação foi bem-sucedida.
-- `ARQUIVO_NAO_ENCONTRADO` (30) se o arquivo não foi encontrado.
-- `ARQUIVO_EM_FORMATO_INVALIDO` (31) se o arquivo JSON está em formato inválido.
+O módulo possui um endereço de um arquivo fixo para registro da base de dados em memória persistente, inacessivel ao cliente.
+O módulo usa um espaço em memória de acesso rápido para guardar o banco de dados para o uso das funcionalidades do módulo. Esta posição de memória também é inacessível ao cliente.
 
-### `finalizar() -> int`
+## inicializar
 
-Salva os dados da variável global `lista_formaturas` no arquivo JSON.
+Esta função realiza a leitura da base de dados na memória persistente para um espaço de acesso rápido a ser usado pelas outras funções. A memória de acesso rápido acessada é fixa e qualquer informação previamente armazenada será perdida.
 
-**Retorna:**
-- `OPERACAO_REALIZADA_COM_SUCESSO` (0) se a operação foi bem-sucedida.
-- `ERRO_NA_ESCRITA_DO_ARQUIVO` (32) se houve erro na escrita do arquivo.
+### Requisitos
 
-### `add_formatura(id_aluno: int, id_formacao: int) -> tuple[int, dict]`
+- Retorna ARQUIVO_NAO_ENCONTRADO caso não encontre o arquivo de leitura
+- Retorna ARQUIVO_EM_FORMATO_INVALIDO caso encontre o arquivo de leitura, mas não seja capaz de fazer a leitura
+- Retorna OPERACAO_REALIZADA_COM_SUCESSO caso faça a leitura com sucesso
+- Não avalia a integridade do conteudo lido e sua compatibilidade com as aplicações que o usarão
 
-Adiciona uma nova formatura para um aluno em uma formação específica.
+## finalizar
 
-**Parâmetros:**
-- `id_aluno`: Identificador do aluno.
-- `id_formacao`: Identificador da formação.
+Esta função realiza o registro da base de dados em memória de acesso rápido sendo usada pelo módulo no arquivo resignado pelo módulo. Qualquer conteudo prévio no arquivo será sobrescrito.
 
-**Retorna:**
-- Tupla contendo o código de erro e a formatura adicionada.
+### Requisitos
 
-### `notify_curso_concluido(id_aluno: int, id_curso: int) -> int`
+- Retorna ERRO_NA_ESCRITA_DO_ARQUIVO caso não seja capaz de fazer a escrita
+- Retorna OPERACAO_REALIZADA_COM_SUCESSO caso faça a escrita com sucesso
 
-Notifica que um curso foi concluído por um aluno.
+## add_formatura
 
-**Parâmetros:**
-- `id_aluno`: Identificador do aluno.
-- `id_curso`: Identificador do curso.
+Esta função recebe em seus parâmetros um inteiro representantdo o id do aluno e um inteiro representando o id de formacao, em sequência. Esta função cria um novo registro de formatura de tal aluno, tal formacao, zero cursos concluidos. Retorna uma tupla com uma mensagem de erro e um dicionario com tais informaçoes da nova formatura, em sequência.
 
-**Retorna:**
-- Código de erro.
+### Requisitos
 
-### `get_formaturas_by_aluno(id_aluno: int) -> tuple[int, list[dict]]`
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e um dicionario com as informações da nova formatura
 
-Retorna uma lista com as formaturas associadas a um aluno.
+### Acoplamento
 
-**Parâmetros:**
-- `id_aluno`: Identificador do aluno.
+- id_aluno: int
+  inteiro identificador do aluno a ser matriculado na formatura
+- id_formacao: int
+  inteiro identificador da formacao a ser matriculada na formatura
 
-**Retorna:**
-- Tupla contendo o código de erro e a lista de formaturas do aluno.
+## notify_curso_concluido
 
-### `get_formaturas() -> tuple[int, list[dict]]`
+Esta função recebe nos parâmetros um inteiro repersentando o id do aluno e um inteiro representando o id do curso, em sequência. Ela busca no banco de dados por uma formatura cuja id de aluno seja a informada e adiciona o novo curso aos cursos concluidos por esse aluno nessa formatura. A função retorna uma mensagem de erro
 
-Retorna uma lista de todas as formaturas.
+### Requisitos
 
-**Retorna:**
-- Tupla contendo o código de erro e a lista de formaturas.
+- Retorna FORMATURA_NAO_ENCONTRADA caso não encontre uma formatura com o id de aluno fornecido
+- Retorna OPERACAO_REALIZADA_COM_SUCESSO caso encontre uma formatura com o id de aluno, adicionando o curso aos cursos concluidos pelo aluno nesta formatura
 
-### `get_alunos_by_formatura(id_formacao: int) -> tuple[int, list[int]]`
 
-Retorna uma lista com os IDs de alunos associados a uma formação específica.
+### Acoplamento
 
-**Parâmetros:**
-- `id_formacao`: Identificador da formação.
+- id_aluno: int
+  inteiro identificador do aluno que concluiu um curso
+- id_curso: int
+  inteiro identificador do curso concluido pelo aluno
 
-**Retorna:**
-- Tupla contendo o código de erro e a lista de alunos.
+## get_formaturas_by_aluno
 
-### `is_concluida(id_aluno: int, id_formacao: int) -> tuple[int, bool]`
+Esta função recebe em seus parâmetros um inteiro representando o id de um aluno. Ela retorna uma tupla com uma mensagem de erro seguida por uma lista todas as ids formacoes desse aluno.
 
-Verifica se um aluno concluiu uma formação específica.
+### Requisitos
 
-**Parâmetros:**
-- `id_aluno`: Identificador do aluno.
-- `id_formacao`: Identificador da formação.
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e uma lista com todas as ids de formacoes registradas em formaturas com o id do aluno informada, em sequência
 
-**Retorna:**
-- Tupla contendo o código de erro e um booleano indicando se a formação foi concluída.
+### Acoplamento
 
-## Funções Internas
+- id_aluno: int
+  inteiro identificador do aluno a ser consultado
 
-### `exibe_formaturas()`
+## get_formaturas
 
-Exibe todas as formaturas ativas.
+Retorna uma tupla com uma mensagem de erro e uma lista com todas as formaturas registradas, em sequência.
 
-## Inicialização e Finalização Automática
+### Requisitos
 
-O programa carrega os dados ao iniciar e salva os dados ao finalizar utilizando `atexit.register(finalizar)`.
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e uma lista com todas as formatursas registradas, em sequência
 
-## Exemplo de Uso
+## get_alunos_by_formatura
 
-```python
-# Inicializar o sistema
-erro = inicializar()
-if erro != OPERACAO_REALIZADA_COM_SUCESSO:
-    print(f"Erro na inicialização: {erro}")
+Esta função recebe em seus parâmetros um inteiro identificador de uma formacao. Esta função retorna uma tupla com uma mensagem de erro e uma lista com todas os ids dos alunos registrados em formaturas com a formacao informada, em sequência.
 
-# Adicionar uma formatura
-erro, formatura = add_formatura(1, 101)
-if erro == OPERACAO_REALIZADA_COM_SUCESSO:
-    print(f"Formatura adicionada: {formatura}")
+### Requisitos
 
-# Notificar curso concluído
-erro = notify_curso_concluido(1, 201)
-if erro == OPERACAO_REALIZADA_COM_SUCESSO:
-    print("Curso concluído notificado")
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e uma lista com todas os ids dos alunos registrados em formaturas com a formacao informada, em sequência
 
-# Exibir formaturas ativas
-exibe_formaturas()
+### Acoplamento
 
-# Verificar se formação foi concluída
-erro, concluida = is_concluida(1, 101)
-if erro == OPERACAO_REALIZADA_COM_SUCESSO and concluida:
-    print("Formação concluída")
-elif erro == OPERACAO_REALIZADA_COM_SUCESSO:
-    print("Formação não concluída")
+- id_formacao: int
+  inteiro identificador da formacao a ser pesquisada
 
-Estrutura do JSON
-O arquivo JSON (formacao-aluno.json) deve ter a seguinte estrutura:
-[
-    {
-        "id_aluno": 1,
-        "id_formacao": 101,
-        "cursos_concluidos": [201, 202]
-    }
-]
+## is_concluida
+
+Esta função recebe em seus parâmetros um inteiro que representa um id de aluno e im inteiro que representa um id de formacao, em sequencia. A função busca na base de dados e retorna uma tupla com uma mensagem de erro seguida por um valor booleano indicando se o aluno informado concluiu a formacao informada.
+
+### Requisitos
+
+- Retorna uma tupla com a mensagem FORMATURA_NAO_ENCONTRADA e o valor booleano False, em sequência, caso não seja encontrada uma formatura com o id do aluno e o id da formacao informados no banco de dados
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e o valor booleano False, em sequência, caso seja encontrada uma formatura com o id do aluno e o id da formacao informados no banco de dados e seus cursos concluidos não abranjam todos os cursos da formacao
+- Retorna uma tupla com a mensagem OPERACAO_REALIZADA_COM_SUCESSO e o valor booleano True, em sequência, caso seja encontrada uma formatura com o id do aluno e o id da formacao informados no banco de dados e seus cursos concluidos abranjam todos os cursos da formacao
+
+### Acoplamento
+
+- id_aluno: int
+  inteiro identificador do aluno consultado
+- id_formacao: int
+  inteiro identificador da formacao consultada
+
+
+
+
+
+
